@@ -335,6 +335,18 @@ Here are some suggested tracks for your multi-agent system. You can choose one o
     *   **Workflow:** Integrate a visualization engine (e.g., **PyVista**, **ParaView**, or **Napari**) within the agentic loop.
     *   **Capability:** The system should render the lattice structures and allow the agent to reason about the visualizations—identifying anomalies or structural characteristics directly from the rendered output.
 
+    The included visual engine accepts either a TIFF path or a directory containing one TIFF. It memory-maps and adaptively downsamples the CT stack, selects an Otsu threshold when none is supplied, and trims dense reconstruction end caps.
+
+    ```powershell
+    # Save a 3D render with orthogonal CT slices for agent/report inspection.
+    python -m src.visual_engine .\data\missing_struts\tif_stacks
+
+    # Open the interactive PyVista viewer with a density-threshold slider.
+    python -m src.visual_engine .\data\missing_struts\tif_stacks --interactive
+    ```
+
+    The MCP server exposes the same functionality as `render_tiff_volume` and `visual_engine`.
+
 3.  **The Interactive Co-Pilot & Dashboard**
     *   **Concept:** Create a user-centric analysis platform.
     *   **Workflow:** Build an interactive dashboard that visualizes the data in 3D and features a chat interface.
