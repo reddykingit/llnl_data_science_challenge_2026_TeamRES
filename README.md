@@ -18,7 +18,7 @@ By the end of the challenge, participants should understand how to move from sta
 
 ## Repository Contents
 
-- `DATA_SCIENCE_CHALLENGE_2026.md/pdf` - main challenge instructions
+- `README.md/DATA_SCIENCE_CHALLENGE_2026.pdf` - main challenge instructions
 - `src/` - starter Python code for MCP tools and skeletonization
 - `data/` - sample CT, mesh, and lattice structure data
 - `images/` - example visualizations used in the challenge materials
@@ -28,7 +28,9 @@ By the end of the challenge, participants should understand how to move from sta
 
 ## Contact
 
-Haichao Miao, Research Scientist at LLNL, miao1 (at) llnl.gov
+This challenge was created by Haichao Miao, Research Scientist at LLNL, miao1 (at) llnl.gov
+
+The "missing strut" dataset builds on the work of many contributors. Jenny Nicolino-Wang served as PI for the project. Alex Hamza originally suggested the idea, and Karl Fisher led the RUS effort, with David Stobbe performing the initial RUS work and Brian Tran later taking over analysis and paper writing. The lattice design and printing effort included work by Paul Alexander, Steve Burke, and Robert Spence, who cut the parts from the build plate.
 
 ## Challenge Description
 
