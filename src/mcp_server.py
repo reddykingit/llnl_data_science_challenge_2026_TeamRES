@@ -2,6 +2,7 @@ import os
 from fastmcp import FastMCP
 import numpy as np
 import matplotlib.pyplot as plt
+import tifffile
 
 # Import the existing skeletonization function from skeletonization.py
 from skeletonization import skeletonize_mask
@@ -125,6 +126,27 @@ def skeletonize(input_filepath: str, output_filepath: str) -> str:
     except Exception as e:
         return f"Error running skeletonize: {str(e)}"
 
+
+@mcp.tool()
+def segment_ct_dataset_tif(input_filepath: str, output_filepath: str, threshold: float) -> str:
+    """
+    Segments a 3D CT dataset stored in a TIFF stack based on a density threshold.
+    The input TIFF is loaded using tifffile, thresholded, and saved as a TIFF stack.
+    """
+    try:
+        if not os.path.exists(input_filepath):
+            return f"Error: Input file not found at '{input_filepath}'."
+        # Load TIFF stack
+        data = tifffile.imread(input_filepath)
+        mask = (data >= threshold).astype(np.uint8)
+        os.makedirs(os.path.dirname(os.path.abspath(output_filepath)), exist_ok=True)
+        tifffile.imwrite(output_filepath, mask)
+        fg_count = int(np.sum(mask))
+        total_voxels = mask.size
+        return (f"Successfully segmented TIFF CT dataset. Saved to '{output_filepath}'. "
+                f"Foreground voxels: {fg_count}/{total_voxels} ({fg_count/total_voxels:.2%}).")
+    except Exception as e:
+        return f"Error segmenting TIFF dataset: {str(e)}"
 
 if __name__ == "__main__":
     mcp.run()

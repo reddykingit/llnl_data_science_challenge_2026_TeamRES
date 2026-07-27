@@ -1,0 +1,4 @@
+interface:
+  display_name: Rasterize Registered Lattice
+  short_description: Optimize and export a CT-aligned lattice raster
+  default_prompt: Find the best rasterization of a registered lattice JSON against its CT TIFF stack.
