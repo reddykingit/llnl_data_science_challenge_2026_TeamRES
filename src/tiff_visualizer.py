@@ -1,3 +1,5 @@
+import argparse
+
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider, Button
 import numpy as np
@@ -113,12 +115,12 @@ def orthoslice_viewer(tiff_path):
 
 # --- Run Visualizer ---
 if __name__ == "__main__":
-    # Replace with your actual TIFF image path
-    FILE_PATH = "missing_with_tolerance_r2.tif" 
-    FILE_PATH2 = "data/missing_struts/tif_stacks/210127_Brian_Tran_strut_lattices_0point5dash1-1-Slices_seg_0.65.tif"
-    FILE_PATH3 = "data/missing_struts/tif_stacks/210127_Brian_Tran_strut_lattices_0point5dash1-1-Slices.tif"
+    parser = argparse.ArgumentParser(description="Interactively visualize a TIFF image or stack.")
+    parser.add_argument("FILE_PATH", help="Path to the TIFF image or stack to visualize")
+    args = parser.parse_args()
+
     # 1. Interactive Slice-by-Slice Viewer
-    TiffVisualizer(FILE_PATH2)
+    TiffVisualizer(args.FILE_PATH)
 
     # 2. Uncomment to view 3D Orthogonal planes simultaneously:
-    #orthoslice_viewer(FILE_PATH)
+    # orthoslice_viewer(args.FILE_PATH)

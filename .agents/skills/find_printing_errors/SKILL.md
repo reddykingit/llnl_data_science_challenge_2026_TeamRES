@@ -62,10 +62,12 @@ The resulting mask is `ideal AND NOT dilated(segmentation)`. Verify the input sh
 
 For geometry-level defect names, run `scripts/identify_json_ids.py` against the selected segmentation using the same coordinate transform and a radius consistent with the rasterization/tolerance. Use its audit output to identify supported struts and junctions, then compute the JSON IDs absent from the supported sets. Preserve clipped geometry and low-support IDs in the report so they are distinguishable from confidently missing defects.
 
+Use `--strictness current` by default. If the user asks for a strict result, use `--strictness strict`. This is strict about reporting a missing defect: it uses the same sampling neighborhoods as `current` but requires less support to classify a strut or junction as present, so its missing ID sets are subsets of (or equal to) `current`. The `loose` and `loosest` presets retain their existing behavior; `loosest` reports the most missing candidates and has the highest false-positive risk. Use `custom` when explicit thresholds are requested. (`white_mode=exact` is a separate mask-selection option and is unchanged.)
+
 The defect report must include input paths, output paths, transform settings, raster radius, segmentation threshold, candidate metric summary, tolerance radius, shape, voxel counts, missing percentage, supported IDs, candidate missing IDs, and any registration or clipping warnings.
 
-- Asking for stricter tolerance results in less missing candidates being reported.
-- Asking for looser tolerance results in more missing candidates being reported, but they may be false positives.
+- Asking for stricter results in less missing candidates being reported.
+- Asking for looser results in more missing candidates being reported, but they may be false positives.
 
 ## Failure handling
 

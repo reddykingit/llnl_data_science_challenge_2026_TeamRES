@@ -103,15 +103,21 @@ def _preset_values(name):
         "current": {"strut_radius": 1.0, "strut_fraction": 0.5, "junction_radius": 1.0,
                     "junction_min_support": 3, "junction_min_fraction": 0.0, "max_gap": None,
                     "require_endpoints": False, "reject_clipped": False},
-        "strict": {"strut_radius": 0.0, "strut_fraction": 0.9, "junction_radius": 0.0,
+        # Conservative missing-defect classification: use the same sampling
+        # neighborhoods as current, but require less evidence to call an item
+        # supported. This makes the reported missing sets a subset of current.
+        "strict": {"strut_radius": 1.0, "strut_fraction": 0.25, "junction_radius": 1.0,
+                    "junction_min_support": 1, "junction_min_fraction": 0.0, "max_gap": None,
+                    "require_endpoints": False, "reject_clipped": False},
+        "loose": {"strut_radius": 0.0, "strut_fraction": 0.9, "junction_radius": 0.0,
                     "junction_min_support": 1, "junction_min_fraction": 1.0, "max_gap": 0,
                     "require_endpoints": True, "reject_clipped": False},
-        "exact": {"strut_radius": 0.0, "strut_fraction": 1.0, "junction_radius": 0.0,
+        "loosest": {"strut_radius": 0.0, "strut_fraction": 1.0, "junction_radius": 0.0,
                    "junction_min_support": 1, "junction_min_fraction": 1.0, "max_gap": 0,
                    "require_endpoints": True, "reject_clipped": True},
     }
     if name not in presets:
-        raise ValueError("strictness must be current, strict, exact, or custom")
+        raise ValueError("strictness must be current, strict, loose, loosest, or custom")
     return presets[name].copy()
 
 
@@ -232,7 +238,29 @@ def identify_ids(
         if identified:
             junction_ids.append(junction["id"])
 
-    result = {"strut_ids": strut_ids, "junction_ids": junction_ids}
+    total_struts = len(geometry["struts"])
+    total_nodes = len(geometry["junctions"])
+    missing_strut_count = total_struts - len(strut_ids)
+    missing_node_count = total_nodes - len(junction_ids)
+    total_geometry_count = total_struts + total_nodes
+    total_missing_count = missing_strut_count + missing_node_count
+
+    result = {
+        "missing_strut_count": missing_strut_count,
+        "missing_strut_percentage": round(
+            100.0 * missing_strut_count / total_struts, 2
+        ) if total_struts else 0.0,
+        "missing_node_count": missing_node_count,
+        "missing_node_percentage": round(
+            100.0 * missing_node_count / total_nodes, 2
+        ) if total_nodes else 0.0,
+        "total_missing_count": total_missing_count,
+        "total_missing_percentage": round(
+            100.0 * total_missing_count / total_geometry_count, 2
+        ) if total_geometry_count else 0.0,
+        "strut_ids": strut_ids,
+        "junction_ids": junction_ids,
+    }
     if audit_path:
         audit = {
             "settings": {
@@ -263,7 +291,7 @@ def main():
     parser.add_argument("--axis-order", default="xyz")
     parser.add_argument("--coordinate-scale", nargs="+", type=float, default=[1.0])
     parser.add_argument("--coordinate-origin", nargs="+", type=float, default=[0.0])
-    parser.add_argument("--strictness", choices=["current", "strict", "exact", "custom"], default="current")
+    parser.add_argument("--strictness", choices=["current", "strict", "loose", "loosest", "custom"], default="current")
     parser.add_argument("--white-mode", choices=["nonzero", "exact", "threshold"], default="nonzero")
     parser.add_argument("--white-threshold", type=float)
     parser.add_argument("--max-gap", type=int)
