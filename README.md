@@ -217,6 +217,50 @@ Here are a few ideas for skills you could build for this dataset:
 *   **Metadata Extractor:** A skill that loads a generated `.npy` file and simply prints out basic metadata like its shape, data type, and the maximum and minimum values to the terminal.
 *   **Threshold Optimizer:** A skill that calls the `segment_ct_dataset()` MCP tool multiple times with different threshold values (e.g., 0.3, 0.5, 0.7) and saves the results in separate files for comparison.
 
+### Example: Structural Weakness Analysis MCP Tool
+
+The repository now includes a new MCP tool named `structural_weakness_analysis_tool`. It reads a defect report and a registered lattice graph, then produces:
+* a JSON summary report
+* a weak-zone heatmap image for the selected support plane
+
+Example usage from the Codex CLI or an MCP client:
+
+```text
+structural_weakness_analysis_tool(
+  defect_report_filepath="data/missing_struts/defect_comparison_report.json",
+  registered_graph_filepath="data/missing_struts/registered_jsons/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.ct_registered.json",
+  support_plane="xy",
+  load_plane="xy",
+  output_dir="analysis/weakness",
+  heatmap_resolution=256,
+  youngs_modulus=110e9,
+  yield_strength=850e6,
+  density=4500.0,
+)
+```
+
+The tool writes `structural_weakness_analysis.json` and `structural_weakness_heatmap.png` under the chosen output directory.
+
+### Dashboard UI
+
+A web dashboard is available for the project at `src/dashboard.py`. It provides:
+* dataset file browsing
+* segmentation controls
+* slice visualization
+* structural weakness heatmap generation
+* an agentic chat assistant connected to Codex/OpenAI if `OPENAI_API_KEY` is configured
+
+To start the dashboard with one command from the repo root:
+```bash
+python start_dashboard.py
+```
+Then open `http://127.0.0.1:5000` in your browser.
+
+If you want the chat assistant to use OpenAI, set:
+```bash
+set OPENAI_API_KEY=<your_key>
+```
+
 ### Task 6: Subagents
 
 In this task, you will create a specialized **Subagent** to handle a complex part of the workflow autonomously. While skills provide focused instructions for a single LLM interaction, subagents act as independent workers within a **Multi-Agent System**. 

@@ -1,4 +1,4 @@
-﻿import json
+import json
 from pathlib import Path
 from typing import Any
 
@@ -9,9 +9,11 @@ from fastmcp import FastMCP
 # Initialize the MCP server
 mcp = FastMCP("CT Segmentation")
 
-from lattice_mcp_tools import register_lattice_tools
+from lattice_mcp_tools import (read_lattice_json, identify_json_nodes, identify_json_struts, skeleton_to_lattice_json, refine_lattice_json_registration, create_lattice_defect_criteria)
+from structural_analysis import structural_weakness_analysis
 
-register_lattice_tools(mcp)
+for _lattice_tool in (read_lattice_json, identify_json_nodes, identify_json_struts, skeleton_to_lattice_json, refine_lattice_json_registration, create_lattice_defect_criteria):
+    mcp.tool()(_lattice_tool)
 
 
 @mcp.tool()
@@ -286,7 +288,47 @@ def visualize_slice(input_filepath: str, output_filepath: str, slice_index: int,
     Returns:
         A status message indicating success and the save location, or an error message.
     """
-    pass # Implementation goes here
+    input_path = Path(input_filepath)
+    output_path = Path(output_filepath)
+
+    if not input_path.is_file():
+        return f"Error: input file not found: {input_path}"
+    if slice_index < 0:
+        return "Error: slice_index must be non-negative."
+    if axis not in {0, 1, 2}:
+        return "Error: axis must be 0, 1, or 2."
+    if output_path.suffix.lower() not in {".png", ".jpg", ".jpeg", ".tif", ".tiff"}:
+        return "Error: output_filepath must use .png, .jpg, .jpeg, .tif, or .tiff extension."
+
+    suffix = input_path.suffix.lower()
+    if suffix == ".npy":
+        volume = np.load(input_path)
+    elif suffix in {".tif", ".tiff"}:
+        volume = tifffile.memmap(input_path)
+    else:
+        return "Error: input must be a .npy, .tif, or .tiff file."
+
+    if volume.ndim != 3:
+        return f"Error: expected a 3D volume, found shape {volume.shape}."
+    if slice_index >= volume.shape[axis]:
+        return f"Error: slice_index must be less than the size of axis {axis} ({volume.shape[axis]})."
+
+    if axis == 0:
+        slice_img = volume[slice_index, :, :]
+    elif axis == 1:
+        slice_img = volume[:, slice_index, :]
+    else:
+        slice_img = volume[:, :, slice_index]
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.imshow(slice_img, cmap="gray", origin="lower")
+    ax.set_title(f"Slice {slice_index} on axis {axis}")
+    ax.axis("off")
+    fig.savefig(output_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    return f"Saved slice visualization to {output_path}."
 
 @mcp.tool()
 def skeletonize(input_filepath: str, output_filepath: str) -> str:
@@ -300,7 +342,23 @@ def skeletonize(input_filepath: str, output_filepath: str) -> str:
     Returns:
         A status message indicating success and the save location, or an error message.
     """
-    pass # Implementation goes here, calling skeletonize_mask internally
+    input_path = Path(input_filepath)
+    output_path = Path(output_filepath)
+    if not input_path.is_file():
+        return f"Error: input file not found: {input_path}"
+    if input_path.suffix.lower() != ".npy":
+        return "Error: skeletonize currently only supports .npy input masks."
+    if output_path.suffix.lower() != ".npy":
+        return "Error: output_filepath must use a .npy extension."
+
+    from skeletonization import skeletonize_mask
+
+    try:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        skeletonize_mask(str(input_path), str(output_path))
+        return f"Saved skeleton to {output_path}."
+    except Exception as error:
+        return f"Error: skeletonization failed: {error}"
 
 
 @mcp.tool()
@@ -432,6 +490,162 @@ def view_ct_defect_results(
             sample_output_dir or None, open_window)
     except (OSError, ValueError, KeyError, json.JSONDecodeError, MemoryError) as error:
         return {"error": f"Unable to view CT defect results: {error}"}
+
+
+@mcp.tool()
+def structural_weakness_analysis_tool(
+    defect_report_filepath: str,
+    registered_graph_filepath: str,
+    support_plane: str = "xy",
+    load_plane: str = "xy",
+    output_dir: str = "",
+    heatmap_resolution: int = 256,
+    youngs_modulus: float | None = None,
+    yield_strength: float | None = None,
+    density: float | None = None,
+) -> dict[str, Any]:
+    """Estimate structural weak zones from CT defect data and lattice graph geometry.
+
+    Args:
+        defect_report_filepath: Defect report JSON path.
+        registered_graph_filepath: Registered lattice graph JSON path.
+        support_plane: One of xy, xz, yz used to define the support plane.
+        load_plane: One of xy, xz, yz used to define the applied direction.
+        output_dir: Optional directory for outputs.
+        heatmap_resolution: Resolution for the output heatmap image.
+        youngs_modulus: Optional material Young's modulus.
+        yield_strength: Optional material yield strength.
+        density: Optional material density.
+
+    Returns:
+        JSON-like dictionary containing output paths and summary counts.
+    """
+    return structural_weakness_analysis(
+        defect_report_filepath,
+        registered_graph_filepath,
+        support_plane,
+        load_plane,
+        output_dir,
+        heatmap_resolution,
+        youngs_modulus,
+        yield_strength,
+        density,
+    )
+
+
+@mcp.tool()
+def evaluate_expected_struts_3d(
+    volume_filepath: str, registered_graph_filepath: str, output_filepath: str = "",
+    ct_threshold: float = 0.5, samples_per_strut: int = 25,
+    tube_radius_voxels: float = 2.0, nominal_diameter_voxels: float = 0.0,
+    occupancy_cutoff: float = 0.20, max_struts: int | None = None,
+) -> dict[str, Any]:
+    """3D line-segment/tube evaluator; slice viewing is inspection-only."""
+    volume_path, graph_path = Path(volume_filepath), Path(registered_graph_filepath)
+    if not volume_path.is_file() or not graph_path.is_file():
+        return {"error": "volume_filepath and registered_graph_filepath must exist"}
+    if not 0 <= ct_threshold <= 1 or not 0 <= occupancy_cutoff <= 1:
+        return {"error": "thresholds must be between 0 and 1"}
+    if samples_per_strut < 3 or tube_radius_voxels <= 0:
+        return {"error": "samples_per_strut must be >= 3 and tube_radius_voxels positive"}
+
+    def graph_data():
+        data = json.loads(graph_path.read_text(encoding="utf-8-sig"))
+        if isinstance(data.get("junctions"), list) and isinstance(data.get("struts"), list):
+            return data["junctions"], data["struts"], ("junction0", "junction1")
+        if isinstance(data.get("nodes"), list) and isinstance(data.get("members"), list):
+            return data["nodes"], data["members"], ("a", "b")
+        raise ValueError("Expected junctions/struts or nodes/members arrays")
+
+    def pos(node):
+        value = node.get("position", node.get("position_xyz_voxels", node.get("position_voxels")))
+        if value is None or len(value) != 3:
+            raise ValueError(f"Node {node.get('id')} has no 3D position")
+        return np.asarray(value, dtype=float)[::-1]
+
+    def offsets(axis, radius):
+        axis = axis / max(np.linalg.norm(axis), 1e-12)
+        ref = np.array([0., 0., 1.]) if abs(axis[2]) < .9 else np.array([0., 1., 0.])
+        u = np.cross(axis, ref); u /= max(np.linalg.norm(u), 1e-12)
+        v = np.cross(axis, u); v /= max(np.linalg.norm(v), 1e-12)
+        out = []
+        for a in range(-radius, radius + 1):
+            for b in range(-radius, radius + 1):
+                if a*a + b*b <= radius*radius:
+                    out.append(np.rint(a*u + b*v).astype(int))
+        return np.unique(np.asarray(out), axis=0)
+
+    def measure(mask, start, end):
+        delta = end - start; length = float(np.linalg.norm(delta))
+        if length <= 0: raise ValueError("coincident strut endpoints")
+        axis = delta / length
+        radius = max(1, int(np.ceil(nominal_diameter_voxels / 2 if nominal_diameter_voxels > 0 else tube_radius_voxels)))
+        tube, wide = offsets(axis, radius), offsets(axis, max(radius + 2, int(np.ceil(radius * 2.5))))
+        occ, diameters, deviations = [], [], []
+        for point in np.linspace(start, end, samples_per_strut):
+            center = np.rint(point).astype(int)
+            points = center + tube
+            valid = np.all((points >= 0) & (points < mask.shape), axis=1); points = points[valid]
+            values = mask[tuple(points.T)] if len(points) else np.zeros(1, dtype=bool)
+            fraction = float(np.mean(values)); occ.append(fraction)
+            diameters.append(2 * radius * np.sqrt(max(fraction, 0)))
+            points = center + wide
+            valid = np.all((points >= 0) & (points < mask.shape), axis=1); points = points[valid]
+            values = mask[tuple(points.T)] if len(points) else np.zeros(1, dtype=bool)
+            if np.any(values):
+                displacement = points[values] - point
+                displacement -= np.outer(displacement @ axis, axis)
+                deviations.append(float(np.linalg.norm(np.mean(displacement, axis=0))))
+        supported = np.asarray(occ) >= occupancy_cutoff
+        transitions = np.diff(np.r_[False, ~supported, False].astype(int))
+        starts, stops = np.flatnonzero(transitions == 1), np.flatnonzero(transitions == -1)
+        gap = int(max((b-a for a, b in zip(starts, stops)), default=0))
+        diameter = np.asarray(diameters); deviation = np.asarray(deviations)
+        return {
+            "supported_length_fraction": float(np.mean(supported)),
+            "continuity": float(1 - gap / samples_per_strut),
+            "longest_gap_fraction": float(gap / samples_per_strut),
+            "longest_gap_samples": gap,
+            "equivalent_diameter_ratio": float(np.median(diameter[supported]) / (2*radius)) if np.any(supported) else 0.,
+            "median_equivalent_diameter_voxels": float(np.median(diameter)),
+            "max_centerline_deviation_voxels": float(np.max(deviation)) if len(deviation) else None,
+            "centerline_deviation_diameters": float(np.max(deviation)/(2*radius)) if len(deviation) else None,
+            "length_voxels": length,
+        }
+
+    try:
+        source = np.load(volume_path, mmap_mode="r") if volume_path.suffix.lower() == ".npy" else tifffile.memmap(volume_path)
+        if source.ndim != 3: return {"error": f"Expected 3D volume, found {source.shape}"}
+        cutoff = ct_threshold * np.iinfo(source.dtype).max if np.issubdtype(source.dtype, np.integer) else ct_threshold
+        mask = np.asarray(source) >= cutoff
+        nodes, struts, keys = graph_data(); positions = {n.get("id"): pos(n) for n in nodes}
+        selected = struts if max_struts is None else struts[:max_struts]
+        labels = ("missing", "broken", "thinned", "thickened", "bent", "intact")
+        counts = {label: 0 for label in labels}; findings = []
+        for strut in selected:
+            a, b = strut.get(keys[0]), strut.get(keys[1])
+            if a not in positions or b not in positions: continue
+            metrics = measure(mask, positions[a], positions[b]); coverage = metrics["supported_length_fraction"]
+            if coverage < .20: defect = "missing"
+            elif coverage < .65 or metrics["longest_gap_fraction"] >= .20: defect = "broken"
+            elif metrics["equivalent_diameter_ratio"] < .75: defect = "thinned"
+            elif metrics["equivalent_diameter_ratio"] > 1.25: defect = "thickened"
+            elif (metrics["centerline_deviation_diameters"] or 0) > .50: defect = "bent"
+            else: defect = "intact"
+            counts[defect] += 1
+            findings.append({"strut_id": strut.get("id"), "start_node": a, "end_node": b, "defect": defect, **metrics})
+        report = {"schema": "ct_3d_expected_strut_defects", "version": 1,
+                  "volume": str(volume_path), "registered_graph": str(graph_path),
+                  "coordinate_convention": "graph XYZ -> volume ZYX",
+                  "detection_method": "3D line segment with disk tube sampling",
+                  "classification_order": list(labels), "summary": counts, "struts": findings}
+        if output_filepath:
+            output = Path(output_filepath); output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(json.dumps(report, indent=2), encoding="utf-8"); report["output_filepath"] = str(output)
+        return report
+    except (OSError, ValueError, KeyError, json.JSONDecodeError, MemoryError) as error:
+        return {"error": f"Unable to evaluate 3D expected struts: {error}"}
+
 
 if __name__ == "__main__":
     # Run the FastMCP server, exposing the tools over standard I/O (default)

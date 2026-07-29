@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lattice CT Dashboard</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f3f5f8; color: #1f2937; }
+    header { padding: 24px; background: #0f172a; color: white; }
+    header h1 { margin: 0; font-size: 24px; }
+    header p { margin: 6px 0 0; color: #cbd5e1; }
+    main { display: grid; gap: 18px; padding: 18px; }
+    .card { background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08); padding: 18px; }
+    .card h2 { margin-top: 0; font-size: 18px; }
+    .row { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+    .field { display: grid; gap: 6px; }
+    .field label { font-size: 14px; font-weight: 600; }
+    .field input, .field select, .field textarea { width: 100%; font-size: 14px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; }
+    .field textarea { min-height: 110px; resize: vertical; }
+    button { cursor: pointer; border: none; border-radius: 10px; background: #2563eb; color: white; padding: 12px 16px; font-weight: 700; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .output { display: grid; gap: 8px; }
+    .output pre { margin: 0; padding: 12px; border-radius: 10px; background: #111827; color: #e2e8f0; overflow: auto; }
+    .outputs { display: grid; gap: 14px; }
+    .asset-link { display: inline-block; color: #2563eb; text-decoration: none; }
+    .asset-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Lattice CT Analysis Dashboard</h1>
+    <p>Run segmentation, visualization, skeletonization, structural analysis, and talk to an assistant.</p>
+  </header>
+  <main>
+    <div class="card">
+      <h2>Available Dataset Files</h2>
+      <div id="file-list">Loading files…</div>
+    </div>
+    <div class="card row">
+      <div>
+        <h2>Upload Local Files</h2>
+        <div class="field">
+          <label for="upload-json">Select JSON file</label>
+          <input id="upload-json" type="file" accept=".json">
+        </div>
+        <div class="field">
+          <label for="upload-volume">Select CT volume file</label>
+          <input id="upload-volume" type="file" accept=".tif,.tiff,.npy">
+        </div>
+        <button id="upload-run">Upload Selected Files</button>
+        <p style="font-size:13px; color:#475569; margin-top:10px;">Uploaded files are saved to the local server and become available in the file selectors.</p>
+      </div>
+      <div>
+        <h2>Segmentation</h2>
+        <div class="field">
+          <label for="segment-input">CT volume</label>
+          <select id="segment-input"></select>
+        </div>
+        <div class="field">
+          <label for="segment-threshold">Threshold</label>
+          <input id="segment-threshold" type="number" min="0" max="1" step="0.01" value="0.5">
+        </div>
+        <div class="field">
+          <label for="segment-output">Output filename</label>
+          <input id="segment-output" type="text" value="dashboard_segmented_mask.npy">
+        </div>
+        <button id="segment-run">Run Segmentation</button>
+      </div>
+      <div>
+        <h2>Slice Visualization</h2>
+        <div class="field">
+          <label for="visualize-input">Volume</label>
+          <select id="visualize-input"></select>
+        </div>
+        <div class="field">
+          <label for="visualize-slice">Slice index</label>
+          <input id="visualize-slice" type="number" min="0" value="0">
+        </div>
+        <div class="field">
+          <label for="visualize-axis">Axis</label>
+          <select id="visualize-axis">
+            <option value="0">0</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="visualize-output">Output filename</label>
+          <input id="visualize-output" type="text" value="dashboard_slice.png">
+        </div>
+        <button id="visualize-run">Create Slice</button>
+      </div>
+    </div>
+    <div class="card row">
+      <div>
+        <h2>Structural Weakness Analysis</h2>
+        <div class="field">
+          <label for="weakness-defect-report">Defect report</label>
+          <select id="weakness-defect-report"></select>
+        </div>
+        <div class="field">
+          <label for="weakness-graph-file">Registered graph</label>
+          <select id="weakness-graph-file"></select>
+        </div>
+        <div class="field">
+          <label for="weakness-support-plane">Support plane</label>
+          <select id="weakness-support-plane">
+            <option value="xy">xy</option>
+            <option value="xz">xz</option>
+            <option value="yz">yz</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="weakness-load-plane">Load plane</label>
+          <select id="weakness-load-plane">
+            <option value="xy">xy</option>
+            <option value="xz">xz</option>
+            <option value="yz">yz</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="weakness-output-subdir">Output subfolder</label>
+          <input id="weakness-output-subdir" type="text" value="dashboard">
+        </div>
+        <button id="weakness-run">Analyze Weakness</button>
+      </div>
+      <div>
+        <h2>Agentic Chat</h2>
+        <div class="field">
+          <label for="chat-query">Ask the assistant</label>
+          <textarea id="chat-query" placeholder="e.g. Segment the CT volume and produce a heatmap"></textarea>
+        </div>
+        <button id="chat-run">Send to Assistant</button>
+      </div>
+    </div>
+    <div class="card outputs">
+      <h2>Results</h2>
+      <div class="output" id="result-output"><pre>Ready.</pre></div>
+    </div>
+  </main>
+  <script>
+    const state = { files: null };
+    const output = document.getElementById("result-output");
+
+    function appendResult(text) {
+      output.innerHTML = `<pre>${text}</pre>`;
+    }
+
+    async function loadFiles() {
+      const response = await fetch("/api/files");
+      state.files = await response.json();
+      const fileList = document.getElementById("file-list");
+      fileList.innerHTML = `
+        <p>CT volumes: ${state.files.ct_files.length}</p>
+        <p>Graph JSON: ${state.files.graph_files.length}</p>
+        <p>Reports: ${state.files.report_files.length}</p>
+      `;
+      for (const id of ["segment-input", "visualize-input"]) {
+        const select = document.getElementById(id);
+        select.innerHTML = state.files.ct_files.map(f => `<option>${f}</option>`).join("");
+      }
+      document.getElementById("weakness-defect-report").innerHTML = state.files.report_files.map(f => `<option>${f}</option>`).join("");
+      document.getElementById("weakness-graph-file").innerHTML = state.files.graph_files.map(f => `<option>${f}</option>`).join("");
+    }
+
+    async function postJson(path, body) {
+      const response = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      return response.json();
+    }
+
+    document.getElementById("upload-run").onclick = async () => {
+      const jsonFile = document.getElementById("upload-json").files[0];
+      const volumeFile = document.getElementById("upload-volume").files[0];
+      if (!jsonFile || !volumeFile) {
+        appendResult("Please select both a JSON file and a CT volume file before uploading.");
+        return;
+      }
+      const form = new FormData();
+      form.append("file", jsonFile);
+      const jsonUpload = await fetch("/api/upload", { method: "POST", body: form });
+      const jsonResult = await jsonUpload.json();
+      if (jsonResult.error) {
+        appendResult(JSON.stringify(jsonResult, null, 2));
+        return;
+      }
+      form.delete("file");
+      form.append("file", volumeFile);
+      const volumeUpload = await fetch("/api/upload", { method: "POST", body: form });
+      const volumeResult = await volumeUpload.json();
+      if (volumeResult.error) {
+        appendResult(JSON.stringify(volumeResult, null, 2));
+        return;
+      }
+      appendResult(JSON.stringify({ json: jsonResult, volume: volumeResult }, null, 2));
+      await loadFiles();
+    };
+
+    document.getElementById("segment-run").onclick = async () => {
+      const result = await postJson("/api/segment", {
+        input_filepath: document.getElementById("segment-input").value,
+        threshold: document.getElementById("segment-threshold").value,
+        output_filename: document.getElementById("segment-output").value,
+      });
+      appendResult(JSON.stringify(result, null, 2));
+    };
+
+    document.getElementById("visualize-run").onclick = async () => {
+      const result = await postJson("/api/visualize", {
+        input_filepath: document.getElementById("visualize-input").value,
+        slice_index: document.getElementById("visualize-slice").value,
+        axis: document.getElementById("visualize-axis").value,
+        output_filename: document.getElementById("visualize-output").value,
+      });
+      appendResult(JSON.stringify(result, null, 2));
+    };
+
+    document.getElementById("weakness-run").onclick = async () => {
+      const result = await postJson("/api/structural-analysis", {
+        defect_report_filepath: document.getElementById("weakness-defect-report").value,
+        registered_graph_filepath: document.getElementById("weakness-graph-file").value,
+        support_plane: document.getElementById("weakness-support-plane").value,
+        load_plane: document.getElementById("weakness-load-plane").value,
+        output_subdir: document.getElementById("weakness-output-subdir").value,
+      });
+      appendResult(JSON.stringify(result, null, 2));
+    };
+
+    document.getElementById("chat-run").onclick = async () => {
+      const result = await postJson("/api/chat", { query: document.getElementById("chat-query").value });
+      appendResult(JSON.stringify(result, null, 2));
+    };
+
+    loadFiles().catch(e => appendResult(`Error loading files: ${e}`));
+  </script>
+</body>
+</html>
