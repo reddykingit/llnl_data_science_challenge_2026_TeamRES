@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Slider
 
-PATH = r".\analysis_outputs/pattern_irregularities_all_groups_20260729_100236/all_groups_pattern_irregularities_viewer_rgb.npy"
+PATH = r"results/0point5dash1/marked_slices_viewer_rgb.npy"
 
 
 
@@ -180,4 +180,6 @@ def run(path, cmap="viridis", axis=0, no_plot=False):
 
 
 if __name__ == "__main__":
-    run(PATH)
+    import sys
+    # usage: python npy_viewer.py results/0point5dash1/marked_slices_viewer_rgb.npy
+    run(sys.argv[1] if len(sys.argv) > 1 else PATH)

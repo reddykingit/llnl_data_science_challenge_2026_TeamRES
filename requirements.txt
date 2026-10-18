@@ -1,6 +1,8 @@
 numpy
-matplotlib
-fastmcp
-scikit-image
-tifffile
 scipy
+scikit-image
+scikit-learn
+tifffile
+matplotlib
+pillow
+fastmcp

@@ -1,0 +1,12 @@
+{"step": "load", "seconds": 1.118, "wall_clock": "2026-10-18T13:25:01", "shape": [761, 815, 837], "dtype": "uint16"}
+{"step": "normalize", "seconds": 24.697, "wall_clock": "2026-10-18T13:25:26"}
+{"step": "segment", "seconds": 8.58, "wall_clock": "2026-10-18T13:25:35", "threshold": 0.3343677520751953}
+{"step": "lattice_vectors", "seconds": 9.154, "wall_clock": "2026-10-18T13:25:44", "H_zyx": [[39.13032824515908, -0.02541120083176967, 0.13651979367283157], [0.05129499947428684, 39.283512836011326, -0.2540376035285732], [-0.0653419489889977, 0.21603913941563846, 39.027231541749174]], "period_slices": 78.26065649031815}
+{"step": "envelope", "seconds": 15.757, "wall_clock": "2026-10-18T13:26:00"}
+{"step": "periodic_neighbour_vote", "seconds": 13.529, "wall_clock": "2026-10-18T13:26:13", "n_neighbours": 18}
+{"step": "candidates_and_85_rule", "seconds": 16.439, "wall_clock": "2026-10-18T13:26:30", "n_candidates": 380, "L_node": 55.37669147324997, "d_node": 14.57816667751992}
+{"step": "features", "seconds": 4.625, "wall_clock": "2026-10-18T13:26:35"}
+{"step": "classify_voids", "seconds": 5.973, "wall_clock": "2026-10-18T13:26:41", "method": "gbm", "accepted_voids": 147}
+{"step": "assign_struts_85_rule", "seconds": 11.256, "wall_clock": "2026-10-18T13:26:52", "lattice_struts": 16493, "missing": 87, "broken": 74}
+{"step": "render", "seconds": 21.805, "wall_clock": "2026-10-18T13:27:14", "missing_struts": 87, "broken_struts": 74, "marked_slices": 114, "out": "results/0point5dash1"}
+{"step": "total", "seconds": 133.511, "wall_clock": "2026-10-18T13:27:14", "host": "vm", "cpu": "x86_64", "cpus": 2}

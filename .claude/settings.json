@@ -1,0 +1,19 @@
+{
+  "enabledMcpjsonServers": ["strut-defects"],
+  "env": {
+    "MCP_TOOL_TIMEOUT": "1800000"
+  },
+  "permissions": {
+    "allow": [
+      "mcp__strut-defects__detect_strut_defects",
+      "mcp__strut-defects__list_defects",
+      "mcp__strut-defects__get_marked_slice",
+      "Bash(python -m src.strut_defects.pipeline:*)",
+      "Bash(python -m unittest:*)"
+    ],
+    "ask": [
+      "mcp__strut-defects__build_reference",
+      "mcp__strut-defects__score_against_reference"
+    ]
+  }
+}

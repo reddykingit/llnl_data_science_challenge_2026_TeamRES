@@ -1,0 +1,54 @@
+{
+ "inputs": {
+  "ct": "data/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif",
+  "registered_json": "data/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.ct_registered.json",
+  "nominal_json": null,
+  "stl_full": null,
+  "stl_defect": null
+ },
+ "registration_affine_nominal_to_ct_xyz": [
+  [
+   0.9975575601173404,
+   -0.0015932199678270328,
+   0.0003194290627368589
+  ],
+  [
+   0.0015260676631518116,
+   0.9990741587037208,
+   8.926206680011022e-05
+  ],
+  [
+   -0.000773042483215844,
+   -0.0015253769017146604,
+   0.9991408282274445
+  ],
+  [
+   0.7127314659593549,
+   2.242019347028003,
+   0.35816025529145284
+  ]
+ ],
+ "stl_symmetry": null,
+ "n_struts": 18468,
+ "excluded": 1008,
+ "evaluated": 17460,
+ "stl_removed_total": 0,
+ "stl_removed_evaluated": 0,
+ "stl_removed_ct_missing": 0,
+ "stl_removed_ct_broken": 0,
+ "stl_removed_ct_intact": 0,
+ "ct_missing_not_in_stl": 90,
+ "ref_missing": 90,
+ "ref_broken": 104,
+ "ref_sound": 17266,
+ "all_struts": {
+  "missing": 414,
+  "broken": 746,
+  "sound": 17308
+ },
+ "excluded_face_breakdown": {
+  "missing": 324,
+  "broken": 642,
+  "sound": 42
+ }
+}

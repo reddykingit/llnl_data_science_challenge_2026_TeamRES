@@ -1,3 +1,54 @@
+# Team RES: Pattern Recognition missing / broken strut detection
+
+> **Technique for the Agentic Strut-Defect Detection Comparison (DSC 2026).** The original challenge README follows below.
+
+**Pattern Recognition** finds **missing** struts (>= 85 % of the strut absent) and **broken** struts
+(a gap that cuts the strut, < 85 % absent) in CT scans of octet-truss lattices. It uses only the lattice's own
+periodicity and never looks at the design files. Each voxel is voted on by its 18 lattice-equivalent neighbours
+(a KNN-style vote over the octet's repeat vectors). Gaps (where the neighbours agree there should be material but the scan has none) are linked in 3D,
+measured against the free strut length (the 85 % rule), and passed through a false-alarm filter.
+
+Results on the 0.5 % dash-1 specimen with the unified DSC input (strut-level; details in `results/0point5dash1/RESULTS.md`):
+
+| Scope | Precision | Recall | F1 | Missing found | Broken found |
+|---|---|---|---|---|---|
+| **y-max build-plate face excluded (headline)** | **0.944** | **0.784** | **0.856** | **86 / 90** | **64 / 104** |
+| All 18,468 struts | 0.944 | 0.131 | 0.230 | 86 / 414 | 64 / 746 |
+
+**How to run (main file, prompt, run sequence): see [`RUN_INSTRUCTIONS.md`](RUN_INSTRUCTIONS.md).**
+
+### Quick start (Claude Code)
+1. `conda activate dssi_env && pip install -r requirements.txt`
+2. If `python` on your PATH is not the conda env, edit `.mcp.json` so `command` is the full path to that env's `python.exe`.
+3. Open the repo in Claude Code and approve the `strut-defects` MCP server. Then ask:
+   *"Use the strut-defect-run skill on `data/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif` (specimen 0point5dash1). Evaluation reference: the same tif plus `data/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.ct_registered.json`."*
+
+### Plain Python
+```
+python -m src.strut_defects.pipeline run --input "data/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif" --out results/0point5dash1
+python npy_viewer.py results/0point5dash1/marked_slices_viewer_rgb.npy      # slideshow of marked slices
+python -m unittest discover tests                                         # synthetic-lattice tests
+```
+Outputs in `results/<specimen>/`:
+- `summary.json`: counts
+- `defects.csv`: one row per defect with slice range, 6x6 grid cell and % absent
+- `defects_map.json`: the defects in the same layout as the repo's lattice JSONs (`junctions` / `struts` / `unit_cells`). Each strut carries its class, % absent, slice range and its marked-slice PNG, so the 3D view and the marked slices can be linked
+- `defects_3d.png` and `defects_3d.html`: 3D view of defect locations
+- `marked_slices/`: marked slice images
+- `defect_contact_sheet.png`
+- `defect_labels.npy`
+- `trace.jsonl`: execution trace
+
+Evaluation only (uses the registered JSON, never part of detection):
+```
+python -m src.evaluation.reference --ct "data/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif" --registered-json "data/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.ct_registered.json" --out reference/0point5dash1
+python -m src.evaluation.score --results results/0point5dash1 --reference reference/0point5dash1
+```
+The unified DSC input treats the print as a 0 % defect design (`data/0.stl`), so the reference is every strut the CT shows missing or broken.
+Earlier exploratory code (Codex MCP tools, grid deformation analysis, run scripts) is kept in `legacy/` and is not exposed.
+
+---
+
 # 2026 Data Science Challenge: Agentic AI for Materials Science 
 
 <small> LLNL-MI-2020827. This work was performed under the auspices of the U.S. Department of Energy by Lawrence Livermore National Laboratory under contract DE-AC52-07NA27344. Lawrence Livermore National Security, LLC </small>

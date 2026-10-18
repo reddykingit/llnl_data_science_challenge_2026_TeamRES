@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "strut-defects": {
+      "command": "python",
+      "args": ["src/mcp_server.py"],
+      "env": { "PYTHONUNBUFFERED": "1" }
+    }
+  }
+}

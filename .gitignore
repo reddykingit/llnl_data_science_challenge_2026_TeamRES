@@ -172,3 +172,24 @@ ehthumbs.db
 Thumbs.db
 
 result
+
+# ---------------------------------------------------------------- Team RES
+# Input data: large, supplied by the coordinators (unified DSC inputs go in data/).
+# Files already tracked through Git LFS (see .gitattributes) stay tracked.
+data/
+
+# Regenerable pipeline outputs (rebuilt by `python -m src.strut_defects.pipeline run`)
+results/*/work/
+results/*/defect_labels.npy
+results/*/marked_slices_viewer_rgb.npy
+
+# Local scratch, packaging and app copies
+.transfer_tmp/
+TeamRES_PatternRecognition_working_folder.zip
+Claude outputs/
+
+# Claude Code personal settings (the shared .claude/settings.json and .mcp.json stay committed)
+.claude/settings.local.json
+
+# Office lock files
+~$*

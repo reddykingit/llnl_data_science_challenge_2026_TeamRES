@@ -1,0 +1,64 @@
+{
+ "missing_struts": 87,
+ "broken_struts": 74,
+ "total_defective_struts": 161,
+ "classifier": "gbm",
+ "rule": "per strut: missing if >= 85% of its free length is void, broken if a void cuts it but covers < 85%",
+ "n_void_candidates": 380,
+ "n_accepted_voids": 147,
+ "grid": "6x6",
+ "lattice": {
+  "input": "data/210127_Brian_Tran_strut_lattices_0point5dash1 1 Slices.tif",
+  "threshold": 0.3343677520751953,
+  "H_zyx": [
+   [
+    39.13032824515908,
+    -0.02541120083176967,
+    0.13651979367283157
+   ],
+   [
+    0.05129499947428684,
+    39.283512836011326,
+    -0.2540376035285732
+   ],
+   [
+    -0.0653419489889977,
+    0.21603913941563846,
+    39.027231541749174
+   ]
+  ],
+  "L_node": 55.37669147324997,
+  "d_node": 14.57816667751992,
+  "L_free": 40.798524795730046,
+  "shape": [
+   761,
+   815,
+   837
+  ],
+  "missing_fraction_rule": 0.85,
+  "n_lattice_nodes": 3104,
+  "n_lattice_struts": 16493,
+  "lattice_corner_grid_zyx": [
+   -10,
+   -10,
+   -8
+  ],
+  "lattice_unit_cells_zyx": [
+   9,
+   9,
+   9
+  ]
+ },
+ "files": {
+  "defects_csv": "defects.csv",
+  "view_3d_png": "defects_3d.png",
+  "view_3d_html": "defects_3d.html",
+  "marked_slices_dir": "marked_slices",
+  "slideshow_npy": "marked_slices_viewer_rgb.npy",
+  "contact_sheet": "defect_contact_sheet.png",
+  "label_volume": "defect_labels.npy",
+  "trace": "trace.jsonl",
+  "defects_map_json": "defects_map.json"
+ },
+ "runtime_seconds": 133.5
+}
